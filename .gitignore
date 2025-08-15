@@ -1,0 +1,66 @@
+# === Python Compiler and cache ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# === Virtual Environment===
+.venv/
+venv/
+env/
+ENV/
+
+# === Jupyter Notebook Checkpoints===
+.ipynb_checkpoints/
+
+# === System and Editor files ===
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# === Logging and Outpus ===
+logs/
+*.log
+*.out
+*.err
+
+# === Testing Outputs and Reports ===
+.coverage
+htmlcov/
+pytest_cache/
+
+# === Temporal Files and Results ===
+tmp/
+temp/
+*.tmp
+*.bak
+
+# === Data and Model Files ===
+data/
+datasets/
+*.ckpt
+*.safetensors
+*.pth
+*.pt
+*.onnx
+
+# === TensorBoard ===
+runs/
+events.out.tfevents.*
+
+# === Environment Variables and Privacy Settings ===
+.env
+.env.*
+!.env.example
+
+# === Vision Outputs ===
+outputs/
+results/
+generated_images/
+
+# === Project Specific ===
+!data/.gitkeep

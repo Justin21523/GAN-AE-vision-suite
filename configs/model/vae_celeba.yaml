@@ -1,0 +1,28 @@
+project: vae-celeba
+seed: 42
+device: cuda:0
+
+model_type: vae
+latent_dim: 128
+input_size: 64
+img_channels: 3
+
+data:
+  dataset: celeba
+  root: ./data
+  download: true
+  batch_size: 64
+  num_workers: 4
+  pin_memory: true
+  persistent_workers: true
+  image_size: 64
+  center_crop: 140
+  normalize_mean: [0.5, 0.5, 0.5]
+  normalize_std: [0.5, 0.5, 0.5]
+
+logging:
+  log_dir: ./logs
+  level: INFO
+
+save:
+  out_dir: ./outputs/vae

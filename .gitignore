@@ -40,7 +40,7 @@ temp/
 *.bak
 
 # === Data and Model Files ===
-data/
+/data/
 datasets/
 *.ckpt
 *.safetensors

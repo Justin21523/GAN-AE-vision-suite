@@ -2,7 +2,7 @@
 """
 Unified dataset factory for CelebA / MNIST
 """
-from typing import Tuple
+from typing import Tuple, Optional
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader
 
@@ -58,16 +58,15 @@ def build_dataset(cfg: dict, train: bool = True):
     tfm = _build_transforms(name, img_size, mean, std)
 
     if name == "celeba":
-        # torchvision CelebA splits are "train"/"valid"/"test"
-        split = "train" if train else "test"
+        # If root points to "data", torchvision 會在 data/celeba/ 下找檔案
+        split = "train" if train else "valid"  # 或視需求改 "test"
         return datasets.CelebA(
             root=root,
-            split=split,
-            transform=tfm,  # <-- use the composed transform
-            target_type="attr",  # or "identity"/"bbox"/"landmarks"
+            split=split,  # "train"/"valid"/"test"
+            target_type="attr",  # 只要影像可用 "identity" 或 []
+            transform=tfm,
             download=download,
         )
-
     elif name == "mnist":
         return datasets.MNIST(
             root=root,
@@ -88,15 +87,32 @@ def build_dataset(cfg: dict, train: bool = True):
         raise ValueError(f"Unsupported dataset: {name}")
 
 
-def get_loader(ds, batch_size: int, num_workers: int, train: bool):
+def get_loader(
+    ds,
+    batch_size: int,
+    num_workers: int,
+    train: bool,
+    pin_memory: Optional[bool] = None,
+    persistent_workers: Optional[bool] = None,
+):
     """
-    Standard DataLoader. Keep default collate_fn so we receive tensors, not lists.
+    Standard DataLoader factory that safely forwards optional PyTorch knobs.
+    Only passes args if not None to stay compatible with older torch versions.
     """
-    return DataLoader(
-        ds,
+    dl_kwargs = dict(
+        dataset=ds,
         batch_size=batch_size,
         shuffle=train,
         num_workers=num_workers,
-        pin_memory=True,
         drop_last=train,
     )
+
+    # Only add if provided, to avoid mismatched kwargs on old torch
+    if pin_memory is not None:
+        dl_kwargs["pin_memory"] = pin_memory
+
+    # persistent_workers requires num_workers > 0 (torch constraint)
+    if persistent_workers is not None and num_workers > 0:
+        dl_kwargs["persistent_workers"] = persistent_workers
+
+    return DataLoader(**dl_kwargs)  # type: ignore

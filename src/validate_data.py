@@ -1,6 +1,12 @@
 # Data/Transforms/PSNR/SSIM validation script
 import os
+import sys, os
 from pathlib import Path
+
+# Add project root to Python path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 import argparse
 import torch
 from torchvision.utils import make_grid, save_image
@@ -10,8 +16,7 @@ from src.utils.logger import setup_logger
 from src.utils.seed import set_seed
 from torch.utils.data import DataLoader
 from src.data.datasets import build_dataset
-from src.metrics.image import psnr, ssim
-from src.models.ae import ConvAE
+from src.metrics.image import compute_psnr, compute_ssim
 import torch.nn.functional as F
 
 
@@ -94,8 +99,8 @@ def main():
         )
 
     # metrics (auto-align inside psnr/ssim)
-    ps = psnr(x, xr, max_val=1.0).mean().item()
-    ss = ssim(x, xr).mean().item()
+    ps = compute_psnr(x, xr, max_val=1.0).mean().item()
+    ss = compute_ssim(x, xr).mean().item()
     logger.info(f"PSNR: {ps:.3f} dB, SSIM: {ss:.4f}")
 
 

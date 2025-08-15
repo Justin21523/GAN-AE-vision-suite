@@ -1,0 +1,38 @@
+project: gan-ae-image
+seed: 42
+device: cuda:0 # or cpu
+
+data:
+  dataset: mnist
+  root: ./data
+  download: True
+  batch_size: 128
+  num_workers: 4
+  image_size: 28 # MNIST native size
+  # Keep MNIST simple: no crop to 24. Normalize to [-1,1] if AE uses Tanh.
+  normalize_mean: [0.5]
+  normalize_std: [0.5]
+
+  # explicit transforms for MNIST
+  train_transforms:
+    - name: Resize
+      size: 28
+    - name: ToTensor
+    - name: Normalize
+      mean: [0.5]
+      std: [0.5]
+
+  val_transforms:
+    - name: Resize
+      size: 28
+    - name: ToTensor
+    - name: Normalize
+      mean: [0.5]
+      std: [0.5]
+
+logging:
+  log_dir: ./logs
+  level: INFO
+
+save:
+  out_dir: ./outputs/validation

@@ -27,7 +27,9 @@ def _ensure_same_shape(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
 
 
 # 高峰噪訊比 Peak Signal-to-Noise Ratio（PSNR）
-def psnr(x: torch.Tensor, y: torch.Tensor, max_val: float = 1.0, eps: float = 1e-8):
+def compute_psnr(
+    x: torch.Tensor, y: torch.Tensor, max_val: float = 1.0, eps: float = 1e-8
+):
     """
     Compute PSNR (Peak Signal-to-Noise Ratio) in dB.
     x, y: [B, C, H, W] in the same scale (e.g., [0,1] or [-1,1] with max_val adjusted).
@@ -58,7 +60,7 @@ def _gaussian_window(
 
 
 # 結構相似度 Structural Similarity（SSIM）
-def ssim(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+def compute_ssim(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     """
     Minimal SSIM (uniform window) for smoke checks; not production-grade.
     Aligns shapes like PSNR. Returns [B].

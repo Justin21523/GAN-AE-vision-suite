@@ -1,0 +1,12 @@
+project: gan-ae-vision
+seed: 42
+device: cuda:0
+
+logging:
+  log_dir: ./logs
+  level: INFO
+
+data:
+  root: ./data
+  batch_size: 32
+  num_workers: 4

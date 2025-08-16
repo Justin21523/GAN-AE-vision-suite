@@ -1,0 +1,73 @@
+# --- OS / Editor ---
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/*
+!.vscode/settings.json        # keep shared workspace settings
+!.vscode/extensions.json
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.eggs/
+.build/
+dist/
+build/
+.cache/
+.mypy_cache/
+.pytest_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+ENV/
+pip-wheel-metadata/
+
+# Virtualenv files
+.python-version
+
+# Coverage / test outputs
+.coverage
+htmlcov/
+
+# --- ML Artifacts ---
+logs/
+outputs/
+wandb/
+mlruns/
+tensorboard/
+checkpoints/
+**/*.pt
+**/*.pth
+**/*.ckpt
+# keep tiny fixtures for tests if any
+!tests/fixtures/**
+
+# Dataset (keep only placeholder/README)
+/data/
+!data/.gitkeep
+!data/README.md
+
+# --- FastAPI / Misc ---
+# compiled static or temporary files
+*.sqlite3
+instance/
+
+# --- Node / React (gan-ui) ---
+gan-ui/node_modules/
+gan-ui/.vite/
+gan-ui/.cache/
+gan-ui/dist/
+gan-ui/.env*
+!gan-ui/.env.example          # provide example if you want
+
+# lockfiles should be tracked for reproducibility
+# (so DO NOT ignore package-lock.json / pnpm-lock.yaml / yarn.lock)
+# gan-ui/package-lock.json
+
+# --- Images / temp ---
+tmp/
+*.tmp

@@ -56,7 +56,7 @@ def build_dataset(cfg: dict, train: bool = True):
     mean = tuple(cfg["data"].get("normalize_mean", [0.5, 0.5, 0.5]))
     std = tuple(cfg["data"].get("normalize_std", [0.5, 0.5, 0.5]))
 
-    tfm = build_transforms(name, img_size, mean, std)
+    tfm = build_transforms(name, img_size, mean, std)  # type: ignore
 
     if name == "celeba":
         # If root points to "data", torchvision 會在 data/celeba/ 下找檔案

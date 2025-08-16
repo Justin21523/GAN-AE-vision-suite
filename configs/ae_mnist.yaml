@@ -1,7 +1,7 @@
 # configs/ae_mnist.yaml (示例)
 data:
   dataset: "MNIST"
-  image_size: 28
+  img_size: 28
   batch_size: 128
   num_workers: 4
 

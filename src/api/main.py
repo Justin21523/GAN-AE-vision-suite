@@ -2,7 +2,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Body, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, HTMLResponse
+from fastapi.responses import Response, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import io, os, logging
@@ -17,16 +17,13 @@ log = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup
-    log.info(
-        "Registered routes (pre-mount): %s",
-        [getattr(r, "path", str(r)) for r in app.router.routes],
-    )
+    log.info("Starting GAN API...")
     yield
-    # shutdown（若需要釋放資源可放這裡）
-    # e.g., close file handles, release GPU memory, etc.
+    # shutdown
+    log.info("Shutting down GAN API.")
 
 
-app = FastAPI(title="GAN API")
+app = FastAPI(title="GAN API+UI", lifespan=lifespan)
 
 # CORS（dev 時讓 React :5173 能請求）
 app.add_middleware(
@@ -38,7 +35,7 @@ app.add_middleware(
 )
 
 svc = GANService()  # one service per process
-
+loaded_ckpt: str | None = None
 # -------- API 路由（帶 /api 前綴） --------
 api = APIRouter(prefix="/api")
 
@@ -55,21 +52,36 @@ class GenReq(BaseModel):
     use_ema: bool = False
 
 
-@app.post("/load")
+@api.post("/load")
 def load(req: LoadReq):
+    global loaded_ckpt
+    if not req.ckpt or not os.path.exists(req.ckpt):
+        return JSONResponse(
+            {"ok": False, "error": f"ckpt not found: {req.ckpt}"}, status_code=400
+        )
     svc.__init__(device=req.device)
     svc.load_checkpoint(req.ckpt)
-    return {"ok": True, "device": str(svc.device), "img_size": svc.cfg["img_size"]}  # type: ignore
+    loaded_ckpt = req.ckpt
+    return {
+        "ok": True,
+        "device": str(svc.device),
+        "img_size": svc.cfg["img_size"],  # type: ignore
+        "ckpt": loaded_ckpt,
+    }
 
 
-# ✅ 別名：有些前端/舊代碼可能打 /api/gan/load
+# alias
 @api.post("/gan/load")
 def load_alias(req: LoadReq):
     return load(req)
 
 
-@app.post("/gan/generate")
-def generate(req: GenReq):
+def _do_generate(req: GenReq) -> Response:
+    if svc.G is None:
+        return JSONResponse(
+            {"ok": False, "error": "no model loaded; call /api/load first"},
+            status_code=400,
+        )
     img = svc.generate_grid(
         GenerateParams(
             n=req.n, seed=req.seed, nrow=req.nrow, use_ema_shadow=req.use_ema
@@ -80,7 +92,26 @@ def generate(req: GenReq):
     return Response(content=buf.getvalue(), media_type="image/png")
 
 
-# ✅ 診斷端點
+@api.post("/generate")
+def generate_plain(req: GenReq):
+    return _do_generate(req)
+
+
+@api.post("/gan/generate")
+def generate_alias(req: GenReq):
+    return _do_generate(req)
+
+
+@api.get("/info")
+def info():
+    return {
+        "ok": True,
+        "device": str(svc.device),
+        "loaded_ckpt": loaded_ckpt,
+        "has_model": svc.G is not None,
+    }
+
+
 @api.get("/health")
 def health():
     return {"ok": True}
@@ -88,13 +119,12 @@ def health():
 
 @api.get("/_routes")
 def routes():
-    # 列出所有註冊路由，方便定位 404
     return sorted([getattr(r, "path", str(r)) for r in app.router.routes])
 
 
 app.include_router(api)
 
-# -------- 產線：託管 React build --------
+# ---- serve React build if present ----
 DIST_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../../..", "gan-ui", "dist")
 )

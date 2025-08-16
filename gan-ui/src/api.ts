@@ -25,7 +25,10 @@ export async function apiGenerate(params: {
   seed: number;
   use_ema: boolean;
 }) {
-  const res = await postJSON(`${API_BASE}/gan/generate`, params);
+  let res = await postJSON(`${API_BASE}/gan/generate`, params);
+  if (res.status === 404) {
+    res = await postJSON(`${API_BASE}/generate`, params);
+  }
   if (!res.ok) throw new Error(`generate failed: ${res.status}`);
   const blob = await res.blob();
   return URL.createObjectURL(blob);

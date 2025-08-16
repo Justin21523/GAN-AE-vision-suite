@@ -1,66 +1,73 @@
-# === Python Compiler and cache ===
+# --- OS / Editor ---
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/*
+!.vscode/settings.json        # keep shared workspace settings
+!.vscode/extensions.json
+
+# --- Python ---
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
 *.so
-
-# === Virtual Environment===
+*.egg-info/
+.eggs/
+.build/
+dist/
+build/
+.cache/
+.mypy_cache/
+.pytest_cache/
+.ipynb_checkpoints/
 .venv/
 venv/
 env/
 ENV/
+pip-wheel-metadata/
 
-# === Jupyter Notebook Checkpoints===
-.ipynb_checkpoints/
+# Virtualenv files
+.python-version
 
-# === System and Editor files ===
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-.vscode/
-.idea/
-
-# === Logging and Outpus ===
-logs/
-*.log
-*.out
-*.err
-
-# === Testing Outputs and Reports ===
+# Coverage / test outputs
 .coverage
 htmlcov/
-pytest_cache/
 
-# === Temporal Files and Results ===
-tmp/
-temp/
-*.tmp
-*.bak
-
-# === Data and Model Files ===
-/data/
-datasets/
-*.ckpt
-*.safetensors
-*.pth
-*.pt
-*.onnx
-
-# === TensorBoard ===
-runs/
-events.out.tfevents.*
-
-# === Environment Variables and Privacy Settings ===
-.env
-.env.*
-!.env.example
-
-# === Vision Outputs ===
+# --- ML Artifacts ---
+logs/
 outputs/
-results/
-generated_images/
+wandb/
+mlruns/
+tensorboard/
+checkpoints/
+**/*.pt
+**/*.pth
+**/*.ckpt
+# keep tiny fixtures for tests if any
+!tests/fixtures/**
 
-# === Project Specific ===
+# Dataset (keep only placeholder/README)
+/data/
 !data/.gitkeep
+!data/README.md
+
+# --- FastAPI / Misc ---
+# compiled static or temporary files
+*.sqlite3
+instance/
+
+# --- Node / React (gan-ui) ---
+gan-ui/node_modules/
+gan-ui/.vite/
+gan-ui/.cache/
+gan-ui/dist/
+gan-ui/.env*
+!gan-ui/.env.example          # provide example if you want
+
+# lockfiles should be tracked for reproducibility
+# (so DO NOT ignore package-lock.json / pnpm-lock.yaml / yarn.lock)
+# gan-ui/package-lock.json
+
+# --- Images / temp ---
+tmp/
+*.tmp

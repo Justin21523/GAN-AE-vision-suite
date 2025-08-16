@@ -10,7 +10,7 @@ data:
   num_workers: 4
 
   # 統一把 MNIST 28x28 轉為 32x32，避免轉置卷積還原尺寸不一致
-  image_size: 32 # MNIST native size
+  img_size: 32 # MNIST native size
   # Keep MNIST simple: no crop to 24. Normalize to [-1,1] if AE uses Tanh.
   normalize_mean: [0.5]
   normalize_std: [0.5]

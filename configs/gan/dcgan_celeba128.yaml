@@ -1,0 +1,38 @@
+model:
+  type: "dcgan" # "dcgan" | "wgan-gp"
+  img_size: 128
+  img_channels: 3
+  latent_dim: 128
+  g_channels: [1024, 512, 256, 128, 64]
+  d_channels: [64, 128, 256, 512, 1024]
+  ema:
+    enabled: true
+    decay: 0.999
+
+data:
+  dataset: "celeba"
+  root: "./data"
+  download: False
+  img_size: 128
+  batch_size: 64
+  num_workers: 4
+  pin_memory: true
+  persistent_workers: true
+
+training:
+  epochs: 5
+  device: "cuda"
+  lr_g: 2.0e-4
+  lr_d: 2.0e-4
+  betas: [0.5, 0.999]
+  mixed_precision: true
+  grad_accum_steps: 1
+  sample_every: 500 # steps
+  save_every: 1 # epochs
+  logdir: "logs/stage3_dcgan"
+
+metrics:
+  fid_kid:
+    enabled: true
+    every_epoch: 1
+    max_samples: 10000

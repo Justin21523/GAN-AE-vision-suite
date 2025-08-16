@@ -5,6 +5,7 @@ Unified dataset factory for CelebA / MNIST
 from typing import Tuple, Optional
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader
+from src.data.transforms import build_transforms
 
 
 def _build_transforms(
@@ -49,13 +50,13 @@ def build_dataset(cfg: dict, train: bool = True):
     name = cfg["data"]["dataset"].lower()
     root = cfg["data"]["root"]
     download = bool(cfg["data"].get("download", False))
-    img_size = int(cfg["data"].get("image_size", 28))
+    img_size = int(cfg["data"].get("img_size") or cfg["data"].get("image_size") or 128)
 
     # mean/std as tuple3 (or tuple1 for MNIST; we'll handle in _build_transforms)
     mean = tuple(cfg["data"].get("normalize_mean", [0.5, 0.5, 0.5]))
     std = tuple(cfg["data"].get("normalize_std", [0.5, 0.5, 0.5]))
 
-    tfm = _build_transforms(name, img_size, mean, std)
+    tfm = build_transforms(name, img_size, mean, std)  # type: ignore
 
     if name == "celeba":
         # If root points to "data", torchvision 會在 data/celeba/ 下找檔案

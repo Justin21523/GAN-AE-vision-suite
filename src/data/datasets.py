@@ -1,119 +1,276 @@
-# src/data/datasets
-"""
-Unified dataset factory for CelebA / MNIST
-"""
-from typing import Tuple, Optional
-from torchvision import transforms, datasets
-from torch.utils.data import DataLoader
-from src.data.transforms import build_transforms
+import os
+from typing import List, Optional, Callable, Tuple, Any, Dict
+from pathlib import Path
+import logging
+
+import torch
+from torch.utils.data import Dataset, DataLoader
+from torchvision import datasets, transforms
+from PIL import Image
+
+from src.utils.config import DataConfig
+from src.utils.seed import seed_worker
+from .transforms import get_transforms
 
 
-def _build_transforms(
-    name: str,
-    image_size: int,
-    mean: Tuple[float, float, float],
-    std: Tuple[float, float, float],
-):
-    """
-    Return a torchvision transform pipeline according to dataset name.
-    Always wrap with transforms.Compose to avoid returning a raw list.
-    """
-    name = name.lower()
+class BaseDataset(Dataset):
+    """Base dataset class with common functionality."""
 
-    if name in {"mnist", "fashionmnist"}:
-        # MNIST is single-channel; normalize with 1-value mean/std
-        return transforms.Compose(
-            [
-                transforms.Resize(image_size),
-                transforms.ToTensor(),  # -> [0,1]
-                transforms.Normalize((mean[0],), (std[0],)),  # use first value
-            ]
+    def __init__(self, root: str, transform: Optional[Callable] = None):
+        self.root = Path(root)
+        self.transform = transform
+        self.logger = logging.getLogger(__name__)
+
+    def _collect_image_paths(self, extensions: List[str] = None) -> List[Path]:
+        """Collect image paths with given extensions."""
+        if extensions is None:
+            extensions = ["jpg", "jpeg", "png", "bmp", "tiff"]
+
+        image_paths = []
+        for ext in extensions:
+            image_paths.extend(self.root.rglob(f"*.{ext}"))
+            image_paths.extend(self.root.rglob(f"*.{ext.upper()}"))
+
+        image_paths.sort()
+        return image_paths
+
+
+class ImageFolderPaired(BaseDataset):
+    """Paired image dataset for Pix2Pix (A -> B translation)."""
+
+    def __init__(self, root: str, transform: Optional[Callable] = None):
+        """
+        Initialize paired image dataset.
+
+        Args:
+            root: Root directory containing 'trainA', 'trainB', 'testA', 'testB'
+            transform: Transform to apply to both images
+        """
+        super().__init__(root, transform)
+
+        # Load images from both domains
+        self.domain_a_dir = self.root / "trainA"
+        self.domain_b_dir = self.root / "trainB"
+
+        self.domain_a_paths = self._collect_image_paths()
+        self.domain_b_paths = self._collect_image_paths()
+
+        # Ensure matching pairs
+        if len(self.domain_a_paths) != len(self.domain_b_paths):
+            self.logger.warning(
+                f"Unpaired dataset: A has {len(self.domain_a_paths)}, B has {len(self.domain_b_paths)}"
+            )
+
+        # Use minimum length
+        self.length = min(len(self.domain_a_paths), len(self.domain_b_paths))
+        self.logger.info(f"Loaded {self.length} paired images from {root}")
+
+    def __len__(self) -> int:
+        return self.length
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        img_a_path = self.domain_a_paths[idx]
+        img_b_path = self.domain_b_paths[idx]
+
+        img_a = Image.open(img_a_path).convert("RGB")
+        img_b = Image.open(img_b_path).convert("RGB")
+
+        if self.transform:
+            if hasattr(self.transform, "__call__") and not hasattr(
+                self.transform, "transform"
+            ):
+                # Assume it's a paired transform
+                img_a, img_b = self.transform(img_a, img_b)
+            else:
+                # Apply same transform to both
+                img_a = self.transform(img_a)
+                img_b = self.transform(img_b)
+
+        return img_a, img_b
+
+
+class PairedImageDataset(Dataset):
+    """Dataset for paired images (e.g., Pix2Pix)."""
+
+    def __init__(self, root: str, transform: Optional[Callable] = None):
+        """
+        Initialize paired image dataset.
+
+        Args:
+            root: Root directory containing 'A' and 'B' subdirectories
+            transform: Transform to apply to both images
+        """
+        self.root = root
+        self.transform = transform
+
+        # Load images from domain A and B
+        self.domain_a_paths = []
+        self.domain_b_paths = []
+
+        domain_a_dir = Path(root) / "A"
+        domain_b_dir = Path(root) / "B"
+
+        for ext in ["jpg", "jpeg", "png", "bmp"]:
+            a_paths = list(domain_a_dir.rglob(f"*.{ext}"))
+            b_paths = list(domain_b_dir.rglob(f"*.{ext}"))
+
+            self.domain_a_paths.extend(a_paths)
+            self.domain_b_paths.extend(b_paths)
+
+        # Sort and ensure matching pairs
+        self.domain_a_paths.sort()
+        self.domain_b_paths.sort()
+
+        if len(self.domain_a_paths) != len(self.domain_b_paths):
+            logging.warning(
+                f"Unpaired dataset: A has {len(self.domain_a_paths)}, B has {len(self.domain_b_paths)} images"
+            )
+
+        logging.info(f"Loaded {len(self.domain_a_paths)} paired images from {root}")
+
+    def __len__(self) -> int:
+        return min(len(self.domain_a_paths), len(self.domain_b_paths))
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        img_a = Image.open(self.domain_a_paths[idx]).convert("RGB")
+        img_b = Image.open(self.domain_b_paths[idx]).convert("RGB")
+
+        if self.transform:
+            img_a, img_b = self.transform(img_a, img_b)
+
+        return img_a, img_b
+
+
+class ImageFolderUnpaired(BaseDataset):
+    """Unpaired image dataset for CycleGAN (A and B domains)."""
+
+    def __init__(
+        self, root: str, domain: str = "A", transform: Optional[Callable] = None
+    ):
+        """
+        Initialize unpaired image dataset.
+
+        Args:
+            root: Root directory containing domain subdirectories
+            domain: Domain to load ("A" or "B")
+            transform: Transform to apply to images
+        """
+        super().__init__(root, transform)
+        self.domain = domain
+
+        if domain == "A":
+            self.domain_dir = self.root / "trainA"
+        else:
+            self.domain_dir = self.root / "trainB"
+
+        self.image_paths = self._collect_image_paths()
+        self.logger.info(
+            f"Loaded {len(self.image_paths)} images from {self.domain_dir}"
         )
 
-    # default: 3-channel image datasets
-    return transforms.Compose(
-        [
-            transforms.Resize((image_size, image_size)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean, std),
-        ]
-    )
+    def __len__(self) -> int:
+        return len(self.image_paths)
+
+    def __getitem__(self, idx: int) -> torch.Tensor:
+        img_path = self.image_paths[idx]
+        img = Image.open(img_path).convert("RGB")
+
+        if self.transform:
+            img = self.transform(img)
+
+        return img
 
 
-def build_dataset(cfg: dict, train: bool = True):
+class CIFAR10Dataset(Dataset):
+    """CIFAR-10 dataset wrapper."""
+
+    def __init__(
+        self, root: str, train: bool = True, transform: Optional[Callable] = None
+    ):
+        self.dataset = datasets.CIFAR10(
+            root=root, train=train, download=True, transform=transform
+        )
+
+    def __len__(self) -> int:
+        return len(self.dataset)
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, int]:
+        return self.dataset[idx]
+
+
+class MNISTDataset(Dataset):
+    """MNIST dataset wrapper."""
+
+    def __init__(
+        self, root: str, train: bool = True, transform: Optional[Callable] = None
+    ):
+        self.dataset = datasets.MNIST(
+            root=root, train=train, download=True, transform=transform
+        )
+
+    def __len__(self) -> int:
+        return len(self.dataset)
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, int]:
+        return self.dataset[idx]
+
+
+def get_dataset(config: DataConfig, is_training: bool = True) -> Dataset:
     """
-    Create a torchvision dataset according to cfg.
-    Required cfg keys:
-      cfg["data"]["dataset"], cfg["data"]["root"], cfg["data"]["image_size"]
-      cfg["data"]["normalize_mean"], cfg["data"]["normalize_std"], cfg["data"]["download"]
+    Get dataset based on configuration.
+
+    Args:
+        config: Data configuration
+        is_training: Whether this is for training
+
+    Returns:
+        Configured dataset
     """
-    name = cfg["data"]["dataset"].lower()
-    root = cfg["data"]["root"]
-    download = bool(cfg["data"].get("download", False))
-    img_size = int(cfg["data"].get("img_size") or cfg["data"].get("image_size") or 128)
+    from .transforms import get_transforms
 
-    # mean/std as tuple3 (or tuple1 for MNIST; we'll handle in _build_transforms)
-    mean = tuple(cfg["data"].get("normalize_mean", [0.5, 0.5, 0.5]))
-    std = tuple(cfg["data"].get("normalize_std", [0.5, 0.5, 0.5]))
+    transforms = get_transforms(config, is_training)
 
-    tfm = build_transforms(name, img_size, mean, std)  # type: ignore
+    if config.type == "torchvision":
+        if config.name.lower() == "mnist":
+            return MNISTDataset(config.root, is_training, transforms)
+        elif config.name.lower() == "cifar10":
+            return CIFAR10Dataset(config.root, is_training, transforms)
+        else:
+            raise ValueError(f"Unsupported torchvision dataset: {config.name}")
 
-    if name == "celeba":
-        # If root points to "data", torchvision 會在 data/celeba/ 下找檔案
-        split = "train" if train else "valid"  # 或視需求改 "test"
-        return datasets.CelebA(
-            root=root,
-            split=split,  # "train"/"valid"/"test"
-            target_type="attr",  # 只要影像可用 "identity" 或 []
-            transform=tfm,
-            download=download,
-        )
-    elif name == "mnist":
-        return datasets.MNIST(
-            root=root,
-            train=train,
-            transform=tfm,
-            download=download,
-        )
+    elif config.type == "imagefolder_paired":
+        return ImageFolderPaired(config.root, transforms)
 
-    elif name == "cifar10":
-        return datasets.CIFAR10(
-            root=root,
-            train=train,
-            transform=tfm,
-            download=download,
-        )
+    elif config.type == "imagefolder_unpaired":
+        domain = getattr(config, "domain", "A")
+        return ImageFolderUnpaired(config.root, domain, transforms)
 
     else:
-        raise ValueError(f"Unsupported dataset: {name}")
+        raise ValueError(f"Unsupported dataset type: {config.type}")
 
 
-def get_loader(
-    ds,
-    batch_size: int,
-    num_workers: int,
-    train: bool,
-    pin_memory: Optional[bool] = None,
-    persistent_workers: Optional[bool] = None,
-):
+def get_dataloader(
+    config: DataConfig, is_training: bool = True, seed: int = 42
+) -> DataLoader:
     """
-    Standard DataLoader factory that safely forwards optional PyTorch knobs.
-    Only passes args if not None to stay compatible with older torch versions.
+    Get data loader based on configuration.
+
+    Args:
+        config: Data configuration
+        is_training: Whether this is for training
+        seed: Random seed for worker initialization
+
+    Returns:
+        Configured data loader
     """
-    dl_kwargs = dict(
-        dataset=ds,
-        batch_size=batch_size,
-        shuffle=train,
-        num_workers=num_workers,
-        drop_last=train,
+    dataset = get_dataset(config, is_training)
+
+    return DataLoader(
+        dataset,
+        batch_size=config.batch_size,
+        shuffle=is_training,
+        num_workers=config.num_workers,
+        pin_memory=True,
+        worker_init_fn=seed_worker,
+        generator=torch.Generator().manual_seed(seed),
     )
-
-    # Only add if provided, to avoid mismatched kwargs on old torch
-    if pin_memory is not None:
-        dl_kwargs["pin_memory"] = pin_memory
-
-    # persistent_workers requires num_workers > 0 (torch constraint)
-    if persistent_workers is not None and num_workers > 0:
-        dl_kwargs["persistent_workers"] = persistent_workers
-
-    return DataLoader(**dl_kwargs)  # type: ignore

@@ -1,0 +1,84 @@
+task: "img2img_paired"
+run_id: "pix2pix_facades"
+seed: 42
+deterministic: true
+
+data:
+  name: "facades"
+  type: "imagefolder_paired"
+  root: "./data/facades"
+  image_size: 256
+  batch_size: 1
+  num_workers: 2
+  channels: 3
+  aug:
+    hflip: true
+    color_jitter: false
+
+model:
+  name: "pix2pix"
+  in_ch: 3
+  out_ch: 3
+  features: 64
+  img_size: 256
+
+loss:
+  gan: "hinge"
+  rec: "l1"
+  lambda_recon: 100.0
+
+optim:
+  type: "adam"
+  g_lr: 0.0002
+  d_lr: 0.0002
+  betas: [0.5, 0.999]
+  weight_decay: 0.0
+
+train:
+  epochs: 200
+  batch_size: 1
+  grad_accum: 1
+  amp: false
+  log_every: 50
+  sample_every: 500
+  ckpt_every: 1000
+  ckpt:
+    save_every: 1000
+    keep_last: 5
+    keep_best: 1
+
+metrics:
+  fidkid:
+    enable: true
+    num_gen: 1000
+    ref_dataset:
+      name: "facades"
+      split: "test"
+    ref_stats_path: null
+  image:
+    enable: true
+    metrics: ["psnr", "ssim"]
+    max_batches: 20
+
+registry:
+  enable: true
+  alias:
+    write_latest: true
+    write_best: true
+
+jobs:
+  engine: "inproc"
+  queue: "default"
+  concurrency: 2
+
+security:
+  allowed_roots: ["AI_CACHE_ROOT", "./data"]
+  deny_outside: true
+
+logging:
+  level: "INFO"
+  jsonl: true
+
+monitoring:
+  enable: true
+  metrics_port: 8000

@@ -1,0 +1,66 @@
+# GAN-AE-VISION-SUITE Security and Path Policy
+
+security:
+  allowed_roots:
+    - "AI_CACHE_ROOT"
+    - "./data"
+    - "/tmp"
+    - "/tmp/gan_ae_vision"  # For temporary operations
+  deny_outside: true
+  max_path_length: 4096
+  safe_mode: true
+  max_file_size: 1073741824  # 1GB in bytes
+
+paths:
+  models: "models"
+  outputs: "outputs"
+  train: "train"
+  logs: "logs"
+  metrics: "metrics"
+  cache: "eval_cache"
+
+policy:
+  checkpoint:
+    keep_last: 5
+    keep_best: 1
+    min_interval_steps: 1000
+    max_total_size: 5368709120  # 5GB
+    max_total_size_gb: 10
+
+  evaluation:
+    cache_enabled: true
+    cache_ttl_days: 30
+    max_concurrent_evals: 2
+
+  cleanup:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    keep_completed_days: 30
+    keep_failed_days: 7
+
+jobs:
+  max_queue_size: 100
+  max_workers: 4
+  job_timeout_hours: 24
+
+registry:
+  auto_index: true
+  index_interval_minutes: 60
+  alias_cleanup_days: 7
+
+
+logging:
+  level: "INFO"
+  jsonl: true
+  max_log_size: 104857600  # 100MB
+  backup_count: 5
+
+monitoring:
+  enable: true
+  metrics_port: 8000
+  health_check_interval: 30
+
+compatibility:
+  min_python_version: "3.8"
+  min_torch_version: "1.9.0"
+  recommended_torch_version: "1.13.0"

@@ -1,0 +1,48 @@
+task_type: "ae"
+run_id: "ae_cifar10_v1"
+seed: 42
+deterministic: true
+output_dir: "./outputs"
+
+data:
+  name: "cifar10"
+  root: "./data"
+  type: "torchvision"
+  image_size: 32
+  batch_size: 128
+  num_workers: 4
+  channels: 3
+  aug:
+    hflip: true
+    color_jitter: false
+
+model:
+  channels: 3
+  latent_dim: 256
+  hidden_dims: [512, 256]
+
+loss:
+  recon: "l2"
+
+optim:
+  type: "adam"
+  lr_g: 0.001
+  betas: [0.9, 0.999]
+  weight_decay: 0.0
+
+train:
+  epochs: 100
+  batch_size: 128
+  log_every: 100
+  sample_every: 500
+  ckpt_every: 1000
+
+eval:
+  enable: true
+  metrics: ["psnr", "ssim", "mse"]
+
+logging:
+  jsonl: true
+
+resume:
+  resume_ckpt: null

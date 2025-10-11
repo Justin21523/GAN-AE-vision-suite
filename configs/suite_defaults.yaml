@@ -1,0 +1,51 @@
+# Global defaults for GAN-AE-VISION-SUITE
+
+# Common defaults
+seed: 42
+deterministic: true
+
+# Data defaults
+data:
+  type: "torchvision"
+  image_size: 64
+  batch_size: 32
+  num_workers: 4
+  aug:
+    hflip: true
+    color_jitter: false
+
+# Model defaults
+model:
+  latent_dim: 128
+  channels: 3
+  norm: "batch"
+  activation: "relu"
+
+# Training defaults
+train:
+  epochs: 100
+  batch_size: 32
+  grad_accum: 1
+  amp: false
+  log_every: 100
+  sample_every: 500
+  ckpt_every: 1000
+
+# Optimization defaults
+optim:
+  type: "adam"
+  betas: [0.5, 0.999]
+  weight_decay: 0.0
+  grad_clip: null
+
+# Logging defaults
+logging:
+  jsonl: true
+  wandb:
+    project: "gan-ae-vision"
+    tags: []
+
+# Evaluation defaults
+eval:
+  enable: true
+  metrics: ["psnr", "ssim"]

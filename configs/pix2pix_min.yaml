@@ -1,0 +1,55 @@
+task_type: "pix2pix"
+run_id: "pix2pix_minimal"
+seed: 42
+deterministic: true
+output_dir: "./outputs"
+
+data:
+  name: "facades"
+  root: "./data/facades"
+  type: "paired"
+  image_size: 256
+  batch_size: 1
+  num_workers: 2
+  channels: 3
+
+model:
+  channels: 3
+  in_channels: 3
+  out_channels: 3
+  features: 64
+
+img2img:
+  paired: true
+  direction: "A2B"
+  lambda_cycle: 10.0
+  lambda_identity: 0.5
+  patch_discriminator: true
+
+loss:
+  gan: "vanilla"
+  recon: "l1"
+  lambda_recon: 100.0
+
+optim:
+  type: "adam"
+  lr_g: 0.0002
+  lr_d: 0.0002
+  betas: [0.5, 0.999]
+
+train:
+  epochs: 1
+  batch_size: 1
+  log_every: 10
+  sample_every: 100
+  ckpt_every: 500
+
+eval:
+  enable: true
+  metrics: ["psnr", "ssim"]
+
+logging:
+  jsonl: true
+
+resume:
+  resume_ckpt: null

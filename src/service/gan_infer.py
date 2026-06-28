@@ -1,12 +1,22 @@
-# src/service/gan_infer.py
-import io
+"""
+GAN inference helpers.
+
+`GANService` is a small utility that:
+- Loads a saved GAN checkpoint (see `src/scripts/train_gan.py`)
+- Reconstructs the generator architecture from the checkpoint config
+- Generates a grid of samples and returns it as a PIL image
+
+This is used by UI/CLI entrypoints that want a reusable sampling core.
+"""
+
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional
 import torch
-from torchvision.utils import make_grid
 from PIL import Image
 
-from src.models.gan.generator import DCGANGenerator
+from src.models.gan.factory import build_generator_from_cfg
+from src.utils.checkpoint import load_checkpoint
+from src.utils.vision import make_grid, to_pil_rgb
 
 
 @dataclass
@@ -35,23 +45,20 @@ class GANService:
         self._ema_shadow: Optional[dict] = None  # if present in ckpt
 
     def load_checkpoint(self, ckpt_path: str):
-        ckpt = torch.load(ckpt_path, map_location="cpu")
+        """Load a training checkpoint and initialize the generator."""
+        ckpt = load_checkpoint(ckpt_path, map_location="cpu")
         self.cfg = ckpt["cfg"]["model"]
-        self.G = DCGANGenerator(
-            latent_dim=self.cfg["latent_dim"],  # type: ignore
-            img_channels=self.cfg["img_channels"],  # type: ignore
-            channels=tuple(self.cfg["g_channels"]),  # type: ignore
-            img_size=self.cfg["img_size"],  # type: ignore
-        ).to(self.device)
+        self.G = build_generator_from_cfg(self.cfg).to(self.device)
         self.G.load_state_dict(ckpt["G"])
         self.G.eval()
 
-        # Optional: if your training保存了EMA shadow，這裡一併帶上
+        # Optional: carry EMA weights if the training checkpoint saved them.
         self.has_ema_shadow = "ema_shadow" in ckpt
         if self.has_ema_shadow:
             self._ema_shadow = ckpt["ema_shadow"]  # dict of weights
 
     def _apply_ema_if_any(self, use_ema: bool):
+        """Temporarily swap generator weights to EMA values (if present)."""
         if not (use_ema and self.has_ema_shadow):  # nothing to do
             return None
         # Backup current weights and swap to EMA shadow
@@ -60,11 +67,18 @@ class GANService:
         return backup
 
     def _restore_backup_if_any(self, backup: Optional[dict]):
+        """Restore pre-EMA weights after sampling."""
         if backup is not None:
             self.G.load_state_dict(backup, strict=False)  # type: ignore
 
     @torch.no_grad()
     def generate_grid(self, params: GenerateParams) -> Image.Image:
+        """
+        Generate a grid of samples and return a PIL image.
+
+        Returns:
+            A `PIL.Image` in RGB, with values in [0, 255].
+        """
         assert self.G is not None, "Call load_checkpoint() first."
         torch.manual_seed(int(params.seed))
         z = torch.randn(int(params.n), int(self.cfg["latent_dim"]), device=self.device)  # type: ignore
@@ -72,9 +86,7 @@ class GANService:
         x = self.G(z)
         self._restore_backup_if_any(backup)
 
-        # [-1,1] -> [0,1]
+        # Convert model output (tanh in [-1, 1]) to [0, 1] for saving/visualization.
         x = (x * 0.5 + 0.5).clamp(0, 1)
         grid = make_grid(x, nrow=int(params.nrow))
-        # to PIL (0..255)
-        nd = (grid * 255).to(torch.uint8).detach().cpu().permute(1, 2, 0).numpy()
-        return Image.fromarray(nd)
+        return to_pil_rgb(grid)

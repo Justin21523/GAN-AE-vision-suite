@@ -1,0 +1,41 @@
+# Dataset config: Anime Faces (HF: huggan/anime-faces) resized to 256x256.
+#
+# Note: source images are low-res (~64x64). Training at 256 uses upscaled inputs.
+#
+# Validate:
+#   python -m src.validate_data --config configs/dataset_anime_faces256.yaml
+#
+project: gan-ae-image
+seed: 42
+device: "cuda:0" # or "cpu"
+
+data:
+  dataset: imagefolder
+  root: /mnt/data/datasets/gan-ae-vision-suite/data/anime_faces/images
+  splits:
+    train: /mnt/data/datasets/gan-ae-vision-suite/configs/splits/anime_faces_train.txt
+    val: /mnt/data/datasets/gan-ae-vision-suite/configs/splits/anime_faces_val.txt
+
+  batch_size: 32
+  num_workers: 8
+  pin_memory: true
+  persistent_workers: true
+
+  img_size: 256
+  train_transforms:
+    - {name: Resize, size: 256}
+    - {name: RandomHorizontalFlip, p: 0.5}
+    - {name: ToTensor}
+    - {name: Normalize, mean: [0.5, 0.5, 0.5], std: [0.5, 0.5, 0.5]}
+  val_transforms:
+    - {name: Resize, size: 256}
+    - {name: ToTensor}
+    - {name: Normalize, mean: [0.5, 0.5, 0.5], std: [0.5, 0.5, 0.5]}
+
+logging:
+  log_dir: /mnt/data/datasets/gan-ae-vision-suite/logs
+  level: INFO
+
+save:
+  out_dir: /mnt/data/datasets/gan-ae-vision-suite/outputs/validation/anime_faces256
+

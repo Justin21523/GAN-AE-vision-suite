@@ -1,9 +1,24 @@
+"""
+DCGAN-style generator implementation.
+
+The generator maps a latent vector `z` ~ N(0, I) to an image tensor in [-1, 1]
+using transposed convolutions and a final `tanh` activation.
+
+This is commonly used as the backbone for DCGAN and can also serve as the
+generator for WGAN-GP when paired with a critic that outputs raw scores.
+"""
+
 import torch
 import torch.nn as nn
 
 
 def weights_init_normal(m: nn.Module):
-    """DCGAN-style weight init."""
+    """
+    DCGAN-style weight initialization.
+
+    - Conv/ConvTranspose: N(0, 0.02)
+    - BatchNorm weight:   N(1, 0.02), bias: 0
+    """
     classname = m.__class__.__name__
     if classname.find("Conv") != -1:
         nn.init.normal_(m.weight.data, 0.0, 0.02)  # type: ignore
@@ -24,6 +39,13 @@ class DCGANGenerator(nn.Module):
         channels=(1024, 512, 256, 128, 64),
         img_size: int = 128,
     ):
+        """
+        Args:
+            latent_dim: Dimensionality of the noise vector z.
+            img_channels: Output image channels (1 for grayscale, 3 for RGB).
+            channels: Feature map widths for each upsampling stage.
+            img_size: Final spatial resolution (e.g., 32/64/128).
+        """
         super().__init__()
         self.latent_dim = latent_dim
         self.img_channels = img_channels
@@ -93,7 +115,14 @@ class DCGANGenerator(nn.Module):
         self.apply(weights_init_normal)
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
-        # z: (B, latent_dim)
+        """
+        Args:
+            z: Latent tensor of shape (B, latent_dim).
+
+        Returns:
+            Generated images of shape (B, img_channels, img_size, img_size) in [-1, 1].
+        """
+        # Reshape into a "1x1 feature map" so ConvTranspose2d can upsample it.
         z = z.view(z.size(0), self.latent_dim, 1, 1)
         img = self.net(z)
         return img

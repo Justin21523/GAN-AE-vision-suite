@@ -1,4 +1,11 @@
-# Edge-case metrics correctness
+"""
+Edge-case metric correctness tests.
+
+These are CPU-only smoke checks for PSNR/SSIM implementations in `src/metrics/image.py`.
+"""
+
+from __future__ import annotations
+
 import torch
 from pathlib import Path
 import sys

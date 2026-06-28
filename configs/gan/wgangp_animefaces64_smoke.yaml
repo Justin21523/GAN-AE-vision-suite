@@ -1,0 +1,45 @@
+# Smoke-test config: WGAN-GP (Anime Faces 64x64, CPU-friendly).
+#
+# 1) Download + make a small subset:
+#   python -m src.scripts.download_anime_faces --out-root ./data/anime_faces --subset 256
+#
+# 2) Run a tiny training loop:
+#   python -m src.scripts.train_gan --config configs/gan/wgangp_animefaces64_smoke.yaml --max-steps 5
+#
+model:
+  type: "wgan-gp"
+  img_size: 64
+  img_channels: 3
+  latent_dim: 128
+  g_channels: [512, 256, 128, 64]
+  d_channels: [64, 128, 256, 512]
+  ema:
+    enabled: false
+
+data:
+  dataset: "imagefolder"
+  root: "./data/anime_faces/subset_256/images"
+  img_size: 64
+  batch_size: 8
+  num_workers: 0
+  pin_memory: false
+  persistent_workers: false
+
+training:
+  epochs: 1
+  device: "cpu"
+  lr_g: 1.0e-4
+  lr_d: 1.0e-4
+  betas: [0.0, 0.9]
+  n_critic: 2
+  lambda_gp: 10.0
+  mixed_precision: false
+  grad_accum_steps: 1
+  sample_every: 1
+  save_every: 1
+  logdir: "logs/smoke_wgangp_animefaces64"
+
+metrics:
+  fid_kid:
+    enabled: false
+

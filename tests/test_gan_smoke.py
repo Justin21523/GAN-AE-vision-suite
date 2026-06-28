@@ -1,3 +1,12 @@
+"""
+GAN module smoke tests.
+
+These tests validate basic tensor shapes and a non-negative gradient penalty value.
+They are designed to be fast and CPU-friendly.
+"""
+
+from __future__ import annotations
+
 import torch
 import sys, os
 from pathlib import Path

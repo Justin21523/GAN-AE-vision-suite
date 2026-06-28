@@ -1,6 +1,14 @@
-# src/metrics/image.py
 """
-PSNR / SSIM implemented in PyTorch (NCHW, values in [0,1])
+Image quality metrics implemented in pure PyTorch.
+
+This module currently provides:
+- PSNR (Peak Signal-to-Noise Ratio)
+- SSIM (Structural Similarity Index; simplified implementation)
+
+Conventions:
+- Inputs are expected as NCHW tensors.
+- Most callers in this repo normalize images to [-1, 1] (tanh-style). If you
+  compute PSNR/SSIM in that space, be consistent about `max_val` and scaling.
 """
 
 import torch
@@ -26,7 +34,7 @@ def _ensure_same_shape(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     return y
 
 
-# 高峰噪訊比 Peak Signal-to-Noise Ratio（PSNR）
+# Peak Signal-to-Noise Ratio (PSNR)
 def compute_psnr(
     x: torch.Tensor, y: torch.Tensor, max_val: float = 1.0, eps: float = 1e-8
 ):
@@ -59,7 +67,7 @@ def _gaussian_window(
     return window
 
 
-# 結構相似度 Structural Similarity（SSIM）
+# Structural Similarity Index (SSIM)
 def compute_ssim(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     """
     Minimal SSIM (uniform window) for smoke checks; not production-grade.

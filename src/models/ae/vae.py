@@ -1,11 +1,33 @@
-# src/models/ae/vae.py
+"""
+Variational AutoEncoder (VAE) implementations.
+
+This file includes:
+- `VariationalAutoEncoder`: a fixed-architecture VAE for a given `input_size`
+- `ConvVAE`: a configurable VAE with `hidden_dims` similar to `ConvAE`
+
+VAE basics:
+- Encoder outputs (mu, logvar) parameters of a Gaussian q(z|x)
+- Sample z using the reparameterization trick
+- Decoder maps z back to an image
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
 class VariationalAutoEncoder(nn.Module):
+    """A simple convolutional VAE with fixed channel progression."""
+
+    is_vae: bool = True
+
     def __init__(self, img_channels=3, latent_dim=128, input_size=64):
+        """
+        Args:
+            img_channels: Input/output image channels.
+            latent_dim: Latent vector size.
+            input_size: Input spatial size (assumes divisible by 8 due to 3 downsamples).
+        """
         super().__init__()
         self.input_size = input_size
 
@@ -35,11 +57,13 @@ class VariationalAutoEncoder(nn.Module):
         )
 
     def reparameterize(self, mu, logvar):
+        """Sample z ~ N(mu, sigma^2) using the reparameterization trick."""
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return mu + eps * std
 
     def forward(self, x):
+        """Forward pass returns (reconstruction, mu, logvar)."""
         h = self.enc(x)
         mu = self.fc_mu(h)
         logvar = self.fc_logvar(h)
@@ -53,6 +77,8 @@ class ConvVAE(nn.Module):
     """
     Convolutional Variational Autoencoder.
     """
+
+    is_vae: bool = True
 
     def __init__(
         self,
@@ -130,15 +156,18 @@ class ConvVAE(nn.Module):
         self.decoder = nn.Sequential(*dec_layers)
 
     def reparameterize(self, mu, logvar):
+        """Sample z via reparameterization."""
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return mu + eps * std
 
     def forward(self, x):
+        """Forward pass returns (reconstruction, mu, logvar)."""
         h = self.encoder(x)
         h_flat = h.view(h.size(0), -1)
         mu = self.fc_mu(h_flat)
         logvar = self.fc_logvar(h_flat)
         z = self.reparameterize(mu, logvar)
-        out = self.decoder(z)
+        h_dec = self.dec_fc(z)
+        out = self.decoder(h_dec)
         return out, mu, logvar

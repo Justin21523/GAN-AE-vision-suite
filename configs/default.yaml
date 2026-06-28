@@ -1,3 +1,10 @@
+# Default "stage-0" config.
+#
+# Used by: `src/train.py` (basic config + logging + seed bootstrap).
+# For model training configs, see:
+# - datasets: `configs/dataset_*.yaml`
+# - GAN:      `configs/gan/*.yaml`
+#
 project: gan-ae-vision
 seed: 42
 device: cuda:0

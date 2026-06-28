@@ -1,4 +1,4 @@
-# src/models/ae/__init__.py
+"""AutoEncoder / VAE model exports."""
 from .ae import AutoEncoder
 from .conv_ae import ConvAE
 from .vae import ConvVAE, VariationalAutoEncoder

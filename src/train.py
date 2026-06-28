@@ -1,4 +1,20 @@
+"""
+Deprecated training entrypoint (stage-0 bootstrap).
+
+This script currently validates:
+- config loading
+- logger setup
+- deterministic seeding
+
+For actual model training, see the scripts under `src/scripts/`.
+
+Recommended entrypoints:
+- GAN: `python -m src.scripts.train_gan --config configs/gan/wgangp_celeba128.yaml`
+- AE/VAE: `python -m src.scripts.train_ae --config configs/dataset_mnist.yaml`
+"""
+
 import argparse
+import warnings
 
 import sys, os
 from pathlib import Path
@@ -13,6 +29,13 @@ from src.utils.seed import set_seed
 
 
 def main():
+    """CLI entrypoint."""
+    warnings.warn(
+        "`src/train.py` is deprecated; prefer `python -m src.scripts.train_gan` or "
+        "`python -m src.scripts.train_ae`.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="configs/default.yaml")
     args = parser.parse_args()

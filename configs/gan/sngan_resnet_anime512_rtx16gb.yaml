@@ -1,0 +1,90 @@
+# GAN training config: SNGAN (hinge) + ResNet + SN + DiffAugment + R1 (512x512, RTX 16GB).
+#
+# IMPORTANT: 512x512 quality requires a truly high-resolution dataset.
+# The earlier `huggan/anime-faces` dataset is low-res and will not produce real 512px detail.
+#
+# Prepare your dataset as an image folder:
+#   ./data/anime_hq/images/**/*.jpg|png
+# and optionally create splits:
+#   python -m src.scripts.make_image_splits --root ./data/anime_hq/images \
+#     --train-out ./configs/splits/anime_hq_train.txt --val-out ./configs/splits/anime_hq_val.txt \
+#     --val-count 5000 --seed 42
+#
+# Run in background:
+#   bash scripts/run_gan_nohup.sh configs/gan/sngan_resnet_anime512_rtx16gb.yaml
+#
+model:
+  type: "sngan"
+  arch: "resnet"
+  img_size: 512
+  img_channels: 3
+  latent_dim: 256
+  base_channels: 32
+  spectral_norm: true
+  ema:
+    enabled: true
+    decay: 0.999
+
+data:
+  dataset: "imagefolder"
+  root: "/mnt/data/datasets/gan-ae-vision-suite/data/anime_hq/images"
+  # If you created split lists, keep these. Otherwise, comment out `splits:`.
+  splits:
+    train: /mnt/data/datasets/gan-ae-vision-suite/configs/splits/anime_hq_train.txt
+    val: /mnt/data/datasets/gan-ae-vision-suite/configs/splits/anime_hq_val.txt
+  img_size: 512
+  train_transforms:
+    - {name: Resize, size: 512}
+    - {name: RandomHorizontalFlip, p: 0.5}
+    - {name: ToTensor}
+    - {name: Normalize, mean: [0.5, 0.5, 0.5], std: [0.5, 0.5, 0.5]}
+  val_transforms:
+    - {name: Resize, size: 512}
+    - {name: ToTensor}
+    - {name: Normalize, mean: [0.5, 0.5, 0.5], std: [0.5, 0.5, 0.5]}
+
+  # 16GB VRAM safe starting point for 512px:
+  # Effective batch = batch_size * grad_accum_steps = 4 * 8 = 32
+  batch_size: 4
+  num_workers: 8
+  pin_memory: true
+  persistent_workers: true
+
+training:
+  device: "cuda"
+  epochs: 800
+
+  mixed_precision: true
+  amp_dtype: "bf16"
+  tf32: true
+  cudnn_benchmark: true
+
+  lr_g: 2.0e-4
+  lr_d: 2.0e-4
+  betas: [0.0, 0.9]
+  n_critic: 1
+  grad_accum_steps: 8
+
+  # DiffAugment helps when the dataset isn't enormous and improves stability.
+  diffaugment_policy: "color,translation,cutout"
+  diffaugment_p: 1.0
+
+  # R1 regularization (lazy) is a common high-res stabilization trick for hinge GANs.
+  r1_gamma: 10.0
+  r1_every: 16
+
+  # Optional safety; set to 0 to disable.
+  grad_clip_norm: 0.0
+
+  tensorboard: true
+  log_every: 50
+  sample_every: 2000
+  save_every: 1
+  save_every_steps: 5000
+  keep_last_checkpoints: 10
+  logdir: "logs/sota_sngan_resnet_anime512_rtx16gb"
+  # Recommend overriding with `scripts/run_gan_nohup.sh` to ensure everything stays under /mnt/data/datasets.
+
+metrics:
+  fid_kid:
+    enabled: false

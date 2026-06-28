@@ -1,3 +1,10 @@
+# GAN training config: DCGAN (CelebA 128x128).
+#
+# Used by: `python -m src.scripts.train_gan --config configs/gan/dcgan_celeba128.yaml`
+# Output artifacts:
+# - sample grids under `training.logdir`
+# - checkpoints `ckpt_epoch*.pt` under `training.logdir`
+#
 model:
   type: "dcgan" # "dcgan" | "wgan-gp"
   img_size: 128

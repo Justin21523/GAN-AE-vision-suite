@@ -1,0 +1,45 @@
+# Dataset config: Anime HQ Faces (512x512) in local imagefolder.
+#
+# Place your high-res images under:
+#   ./data/anime_hq/images/**/*.jpg|png|webp
+#
+# Optional split lists:
+#   python -m src.scripts.make_image_splits --root ./data/anime_hq/images \
+#     --train-out ./configs/splits/anime_hq_train.txt --val-out ./configs/splits/anime_hq_val.txt \
+#     --val-count 5000 --seed 42
+#
+# Validate:
+#   python -m src.validate_data --config configs/dataset_anime_hq512.yaml
+#
+project: gan-ae-image
+seed: 42
+device: "cuda:0" # or "cpu"
+
+data:
+  dataset: imagefolder
+  root: /mnt/data/datasets/gan-ae-vision-suite/data/anime_hq/images
+  splits:
+    train: /mnt/data/datasets/gan-ae-vision-suite/configs/splits/anime_hq_train.txt
+    val: /mnt/data/datasets/gan-ae-vision-suite/configs/splits/anime_hq_val.txt
+  batch_size: 4
+  num_workers: 8
+  pin_memory: true
+  persistent_workers: true
+
+  img_size: 512
+  train_transforms:
+    - {name: Resize, size: 512}
+    - {name: RandomHorizontalFlip, p: 0.5}
+    - {name: ToTensor}
+    - {name: Normalize, mean: [0.5, 0.5, 0.5], std: [0.5, 0.5, 0.5]}
+  val_transforms:
+    - {name: Resize, size: 512}
+    - {name: ToTensor}
+    - {name: Normalize, mean: [0.5, 0.5, 0.5], std: [0.5, 0.5, 0.5]}
+
+logging:
+  log_dir: /mnt/data/datasets/gan-ae-vision-suite/logs
+  level: INFO
+
+save:
+  out_dir: /mnt/data/datasets/gan-ae-vision-suite/outputs/validation/anime_hq512

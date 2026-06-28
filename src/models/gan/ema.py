@@ -1,4 +1,15 @@
-from typing import Dict
+"""
+Exponential Moving Average (EMA) helper.
+
+EMA is a common stabilization technique for GANs:
+- During training, keep a smoothed copy of generator weights.
+- During sampling/evaluation, temporarily swap to EMA weights for higher quality.
+"""
+
+from __future__ import annotations
+
+from typing import Dict, Optional
+
 import torch
 import torch.nn as nn
 
@@ -9,29 +20,53 @@ class EMA:
     def __init__(self, model: nn.Module, decay: float = 0.999):
         self.model = model
         self.decay = decay
+        # Keep a full `state_dict` shadow (params + buffers) so sampling can use
+        # consistent BatchNorm running stats as well.
         self.shadow: Dict[str, torch.Tensor] = {}
         self.backup: Dict[str, torch.Tensor] = {}
 
     def register(self):
-        for name, p in self.model.named_parameters():
-            if p.requires_grad:
-                self.shadow[name] = p.data.clone()
+        """Initialize EMA shadow weights from the model's current parameters."""
+        self.shadow = {k: v.detach().clone() for k, v in self.model.state_dict().items()}
 
     def update(self):
-        for name, p in self.model.named_parameters():
-            if p.requires_grad:
-                assert name in self.shadow
-                new_avg = (1.0 - self.decay) * p.data + self.decay * self.shadow[name]
-                self.shadow[name] = new_avg.clone()
+        """Update EMA shadow weights after each optimizer step."""
+        if not self.shadow:
+            self.register()
+
+        current = self.model.state_dict()
+        for key, value in current.items():
+            if key not in self.shadow:
+                self.shadow[key] = value.detach().clone()
+                continue
+
+            if not torch.is_floating_point(value):
+                self.shadow[key] = value.detach().clone()
+                continue
+
+            new_avg = (1.0 - self.decay) * value.detach() + self.decay * self.shadow[key]
+            self.shadow[key] = new_avg.clone()
 
     def apply_shadow(self):
-        for name, p in self.model.named_parameters():
-            if p.requires_grad:
-                self.backup[name] = p.data
-                p.data = self.shadow[name]
+        """Swap model parameters/buffers to their EMA (shadow) values."""
+        if not self.shadow:
+            self.register()
+        self.backup = {k: v.detach().clone() for k, v in self.model.state_dict().items()}
+        self.model.load_state_dict(self.shadow, strict=False)
 
     def restore(self):
-        for name, p in self.model.named_parameters():
-            if p.requires_grad and name in self.backup:
-                p.data = self.backup[name]
+        """Restore original (non-EMA) parameters after `apply_shadow()`."""
+        if self.backup:
+            self.model.load_state_dict(self.backup, strict=False)
         self.backup = {}
+
+    def load_shadow(self, shadow: Dict[str, torch.Tensor], device: Optional[torch.device] = None):
+        """
+        Load a previously-saved EMA shadow state.
+
+        Args:
+            shadow: A `state_dict`-like mapping.
+            device: If provided, move shadow tensors to this device.
+        """
+        dev = device or next(self.model.parameters()).device
+        self.shadow = {k: v.detach().to(dev) for k, v in shadow.items()}

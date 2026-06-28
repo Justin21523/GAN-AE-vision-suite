@@ -1,27 +1,39 @@
-# Data/Transforms/PSNR/SSIM validation script
-import os
-import sys, os
-from pathlib import Path
+"""
+Data/transform/metric validation script.
 
-# Add project root to Python path
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+Purpose:
+- Load a dataset from a YAML config
+- Fetch one batch
+- Save a sample grid to disk
+- (Optional) run a tiny "identity-ish" AE forward pass to verify PSNR/SSIM wiring
+
+This is intended as a quick sanity check when setting up a new dataset/config.
+"""
+
+from __future__ import annotations
 
 import argparse
+import os
 import torch
-from torchvision.utils import make_grid, save_image
-import torchvision.utils as vutils
 from src.utils.config import load_config
 from src.utils.logger import setup_logger
 from src.utils.seed import set_seed
 from torch.utils.data import DataLoader
 from src.data.datasets import build_dataset
 from src.metrics.image import compute_psnr, compute_ssim
+from src.utils.vision import save_image_grid
 import torch.nn.functional as F
 
 
 class IdentityAE(torch.nn.Module):
-    """A tiny AE-like module that preserves spatial size."""
+    """
+    A tiny AE-like module that preserves spatial size.
+
+    This is not meant for quality; it is a minimal network to validate:
+- the forward pass works
+- recon tensors match expected shapes
+- PSNR/SSIM code paths run end-to-end
+    """
 
     def __init__(self, channels=1):
         super().__init__()
@@ -38,6 +50,7 @@ class IdentityAE(torch.nn.Module):
 
 
 def main():
+    """CLI entrypoint."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="configs/dataset_celeba.yaml")
     parser.add_argument(
@@ -52,6 +65,7 @@ def main():
     device = torch.device(cfg["device"] if torch.cuda.is_available() else "cpu")
     logger.info(f"Device: {device}")
 
+    # Build the dataset from config (see `src/data/datasets.py`).
     ds_train = build_dataset(cfg, train=True)
     logger.info(f"Dataset: {cfg['data']['dataset']}, Train size: {len(ds_train)}")
 
@@ -64,7 +78,7 @@ def main():
         pin_memory=bool(cfg["data"].get("pin_memory", True)),
     )
 
-    # get one batch and move to device
+    # Get one batch and move to device.
     batch = next(iter(loader))
     # batch can be a Tensor, a tuple/list like (images, labels), or a dict
     if isinstance(batch, (list, tuple)):
@@ -76,29 +90,28 @@ def main():
         x = batch
     x = x.to(device, non_blocking=True)  # type: ignore [B, C, H, W]
 
-    # save a quick grid
+    # Save a quick grid for visual inspection.
     os.makedirs(cfg["save"]["out_dir"], exist_ok=True)
-    vutils.save_image(
-        x[:64],  # take up to 64 images
+    save_image_grid(
+        x[:64],
         os.path.join(cfg["save"]["out_dir"], "samples_input.png"),
         nrow=8,
-        normalize=True,
         value_range=(-1, 1),
     )
 
     xr = x
     if args.use_ae:
+        # Run through a tiny network to produce a "reconstruction" tensor.
         ae = IdentityAE(channels=x.shape[1]).to(device)
         xr = ae(x)
-        vutils.save_image(
-            xr,
+        save_image_grid(
+            xr[:64],
             os.path.join(cfg["save"]["out_dir"], "samples_recon.png"),
             nrow=8,
-            normalize=True,
             value_range=(-1, 1),
         )
 
-    # metrics (auto-align inside psnr/ssim)
+    # Metrics (PSNR/SSIM handle minor shape mismatches internally).
     ps = compute_psnr(x, xr, max_val=1.0).mean().item()
     ss = compute_ssim(x, xr).mean().item()
     logger.info(f"PSNR: {ps:.3f} dB, SSIM: {ss:.4f}")

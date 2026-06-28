@@ -1,3 +1,12 @@
+"""
+Stage-0 smoke tests.
+
+These tests verify that basic utilities (config loader, logger, seeding) import and run.
+They intentionally avoid GPU work.
+"""
+
+from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path

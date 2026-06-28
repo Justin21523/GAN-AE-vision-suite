@@ -1,24 +1,53 @@
-project: vae-celeba
+# VAE training config: CelebA 64x64.
+#
+# Used by:
+# - `python -m src.scripts.train_ae --config configs/model/vae_celeba.yaml`
+#
+# Notes:
+# - This repo snapshot uses torchvision-free dataset loading. `download` is kept
+#   for schema compatibility but is not automatically performed.
+# - The CelebA loader is folder-based and does not provide a separate validation
+#   split; `train=False` will still read from the same folder layout.
+#
+project: gan-ae-image
 seed: 42
-device: cuda:0
-
-model_type: vae
-latent_dim: 128
-input_size: 64
-img_channels: 3
+device: cuda:0 # or cpu
 
 data:
   dataset: celeba
   root: ./data
-  download: true
+  download: false
   batch_size: 64
   num_workers: 4
   pin_memory: true
   persistent_workers: true
-  image_size: 64
+
+  # Optional, recommended: explicit split lists for reproducibility.
+  # See `configs/splits/README.md` for the file format.
+  #
+  # splits:
+  #   train: ./configs/splits/celeba_train.txt
+  #   val:   ./configs/splits/celeba_val.txt
+
+  img_size: 64
   center_crop: 140
   normalize_mean: [0.5, 0.5, 0.5]
   normalize_std: [0.5, 0.5, 0.5]
+
+model:
+  type: vae # ae / conv_ae / vae / vae-fixed
+  img_channels: 3
+  latent_dim: 128
+  hidden_dims: [32, 64, 128]
+  activation: relu
+
+training:
+  epochs: 5
+  lr: 1.0e-3
+  weight_decay: 0.0
+  beta_kl: 1.0
+  amp: true
+  save_dir: "logs/checkpoints_vae"
 
 logging:
   log_dir: ./logs

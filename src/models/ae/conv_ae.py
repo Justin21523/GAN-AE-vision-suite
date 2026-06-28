@@ -1,4 +1,14 @@
-# src/models/ae/conv_ae.py
+"""
+Convolutional AutoEncoder (ConvAE).
+
+This model is a "symmetric" encoder/decoder:
+- Encoder: strided Conv2d blocks downsample the image.
+- Latent: a Linear layer maps the flattened feature map to `latent_dim`.
+- Decoder: ConvTranspose2d blocks upsample back to the original resolution.
+
+The output uses `tanh`, so training data is usually normalized to [-1, 1].
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,6 +28,14 @@ class ConvAE(nn.Module):
         activation: str = "relu",
         input_size: int = 64,
     ):
+        """
+        Args:
+            input_channels: Input image channels (1 or 3 typically).
+            latent_dim: Size of the latent vector.
+            hidden_dims: Channel widths per encoder stage; decoder mirrors this.
+            activation: "relu" or leaky-relu variant.
+            input_size: Input spatial size (must be divisible by 2**len(hidden_dims)).
+        """
         super().__init__()
         if hidden_dims is None:
             hidden_dims = [32, 64, 128]
@@ -41,7 +59,7 @@ class ConvAE(nn.Module):
             in_ch = h
         self.encoder = nn.Sequential(*enc_layers)
 
-        # downsampled spatial size
+        # Downsampled spatial size after strided conv blocks.
         self._feat_hw = self.input_size // (2 ** len(self.hidden_dims))
         feat_dim = self.hidden_dims[-1] * self._feat_hw * self._feat_hw
 
@@ -51,7 +69,7 @@ class ConvAE(nn.Module):
             nn.Unflatten(1, (self.hidden_dims[-1], self._feat_hw, self._feat_hw)),
         )
 
-        # ---- Decoder (mirror) ----
+        # ---- Decoder (mirror of encoder) ----
         dec_layers = []
         rev = self.hidden_dims[::-1]
         for i in range(len(rev) - 1):
@@ -69,7 +87,7 @@ class ConvAE(nn.Module):
                     self.act,
                 )
             )
-        # last to image space
+        # Final stage: map back to image space and squash with tanh.
         dec_layers.append(
             nn.ConvTranspose2d(
                 rev[-1],
@@ -85,6 +103,7 @@ class ConvAE(nn.Module):
         self.decoder = nn.Sequential(*dec_layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Encode -> latent -> decode to reconstruct the input."""
         h = self.encoder(x)
         z = self.enc_fc(h)
         h_dec = self.dec_fc(z)

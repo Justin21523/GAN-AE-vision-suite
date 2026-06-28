@@ -1,2 +1,7 @@
-# src/metrics/__init__.py
-# image metrics (PSNR/SSIM)
+"""
+Metrics subpackage.
+
+Currently includes:
+- `src/metrics/image.py`: PSNR/SSIM implementations
+- `src/metrics/fidkid.py`: torchmetrics-based FID/KID wrapper
+"""

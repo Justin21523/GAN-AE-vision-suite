@@ -1,3 +1,10 @@
+# GAN training config: WGAN-GP (CelebA 128x128).
+#
+# Used by: `python -m src.scripts.train_gan --config configs/gan/wgangp_celeba128.yaml`
+# Key ideas:
+# - `n_critic`: how many critic steps per generator step
+# - `lambda_gp`: gradient penalty strength
+#
 model:
   type: "wgan-gp"
   img_size: 128

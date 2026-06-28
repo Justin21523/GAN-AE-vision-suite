@@ -1,3 +1,13 @@
+# Dataset config: CelebA (training + evaluation defaults).
+#
+# Used by:
+# - `src/validate_data.py`
+# - AE/VAE scripts that consume `cfg["data"]` keys (root/img_size/mean/std/etc).
+#
+# Notes:
+# - Typical GAN/AE pipelines normalize to [-1, 1] (mean/std = 0.5).
+# - `center_crop` is commonly used to focus on face region before resizing.
+#
 project: gan-ae-image
 seed: 42
 device: "cuda:0" # or "cpu"
@@ -5,11 +15,31 @@ device: "cuda:0" # or "cpu"
 data:
   dataset: celeba # celeba
   root: ./data
-  download: true
+  download: false
   batch_size: 64
   num_workers: 4
   pin_memory: true # speed up host->GPU copies
   persistent_workers: False
+
+  # Optional, recommended: explicit split lists for reproducibility.
+  #
+  # Format:
+  # - A plain text file with one image path per line.
+  # - Paths can be relative to `data.root` (or `data.root/img_align_celeba` for celeba),
+  #   or absolute paths.
+  # - Empty lines and `# comments` are ignored.
+  #
+  # Example:
+  #   splits:
+  #     train: ./configs/splits/celeba_train.txt
+  #     val:   ./configs/splits/celeba_val.txt
+  #
+  # If not provided, this repo's celeba loader will read images from:
+  #   ./data/img_align_celeba/   (or ./data/celeba/ or ./data/)
+  #
+  # splits:
+  #   train: ./configs/splits/celeba_train.txt
+  #   val:   ./configs/splits/celeba_val.txt
 
   img_size: 128 # common for GAN/AE with CelebA
   center_crop: 140 # crop to face-ish region then resize
@@ -22,9 +52,8 @@ model:
   latent_dim: 128
   hidden_dims: [32, 64, 128]
   activation: relu
-  input_size: 28 # 只有 VAE 需要時再加
 
-train:
+training:
   epochs: 5
   lr: 1.0e-3
   weight_decay: 0.0

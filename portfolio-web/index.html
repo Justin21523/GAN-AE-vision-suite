@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GAN-AE Vision Suite — Portfolio Demo</title>
+    <meta
+      name="description"
+      content="GAN-AE Vision Suite is a local-first PyTorch, FastAPI and React platform for computer vision experiment demos."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="kicker">Portfolio Project</p>
+          <h1>GAN-AE Vision Suite</h1>
+          <p class="sub">
+            A local-first computer vision lab for dataset QA, AE/VAE reconstruction, GAN training,
+            checkpoint sampling, metrics tracking and artifact review.
+          </p>
+          <div class="actions">
+            <a href="https://github.com/Justin21523/GAN-AE-vision-suite" class="button">View GitHub</a>
+            <a href="#demo" class="button secondary">Demo strategy</a>
+          </div>
+        </div>
+        <div class="visual" aria-label="Synthetic sample grid">
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </section>
+
+      <section class="stats">
+        <div><strong>PyTorch</strong><span>GAN + AE/VAE pipelines</span></div>
+        <div><strong>FastAPI</strong><span>jobs, sampling, files, runs</span></div>
+        <div><strong>React</strong><span>dashboard and demo UI</span></div>
+        <div><strong>Static safe</strong><span>public page + local backend</span></div>
+      </section>
+
+      <section class="grid" id="demo">
+        <article class="card">
+          <h2>What it demonstrates</h2>
+          <p>
+            End-to-end ML engineering: reproducible configs, dataset checks, model training,
+            checkpoint inference, metrics, artifact browsing and a UI that makes the work understandable.
+          </p>
+        </article>
+        <article class="card">
+          <h2>How to view it</h2>
+          <p>
+            The public site is static for safety. The full demo runs locally with
+            <code>scripts/dev_fullstack.sh</code>, then opens the React dashboard at
+            <code>127.0.0.1:5173</code>.
+          </p>
+        </article>
+        <article class="card">
+          <h2>Interview flow</h2>
+          <p>
+            Start on Overview, run Data Report, launch a CPU smoke training job, inspect Runs,
+            then load a checkpoint in Sampler to generate a deterministic image grid.
+          </p>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GAN-AE Vision Suite — Demo</title>
+    <meta
+      name="description"
+      content="Portfolio demo site for GAN-AE Vision Suite: screenshots, demo video, architecture and local run instructions."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div>
+          <p class="kicker">GitHub Pages Demo</p>
+          <h1>GAN-AE Vision Suite</h1>
+          <p class="lead">
+            一個 local-first 的電腦視覺實驗平台：資料品質檢查、AE/VAE reconstruction、GAN training、
+            checkpoint sampling、metrics tracking 與 artifacts review。
+          </p>
+          <div class="actions">
+            <a class="button" href="./app/">Open Interactive UI</a>
+            <a class="button secondary" href="https://github.com/Justin21523/GAN-AE-vision-suite">GitHub Repo</a>
+          </div>
+        </div>
+        <img src="./assets/screenshot-overview.png" alt="GAN-AE Vision Suite overview screenshot" />
+      </section>
+
+      <section class="stats">
+        <div><strong>PyTorch</strong><span>GAN + AE/VAE model workflows</span></div>
+        <div><strong>FastAPI</strong><span>local jobs, sampling, files, runs</span></div>
+        <div><strong>React</strong><span>portfolio dashboard and tools</span></div>
+        <div><strong>GitHub Pages</strong><span>static public demo site</span></div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>Demo Video</h2>
+          <p>短影片展示公開 demo 的主要畫面；完整訓練流程可在本機 fullstack 模式錄製。</p>
+        </div>
+        <video controls muted playsinline poster="./assets/screenshot-overview.png">
+          <source src="./assets/demo-walkthrough.mp4" type="video/mp4" />
+        </video>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>Screenshots</h2>
+          <p>面試官可以直接從這些畫面理解平台功能與完成度。</p>
+        </div>
+        <div class="shots">
+          <figure>
+            <img src="./assets/screenshot-overview.png" alt="Overview dashboard screenshot" />
+            <figcaption>Overview dashboard: project value, mock metrics, sample grid and architecture.</figcaption>
+          </figure>
+          <figure>
+            <img src="./assets/screenshot-landing.png" alt="Portfolio landing screenshot" />
+            <figcaption>Portfolio landing: concise public-facing project explanation.</figcaption>
+          </figure>
+          <figure>
+            <img src="./assets/gan-samples.png" alt="Generated sample grid demo artifact" />
+            <figcaption>Safe demo artifact: deterministic sample grid for screenshots.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section grid">
+        <article>
+          <h2>What to Notice</h2>
+          <ul>
+            <li>Config-driven ML workflows instead of hardcoded experiment scripts.</li>
+            <li>Local job runner with streamed logs and metrics for demo operations.</li>
+            <li>Checkpoint compatibility across PyTorch 2.6+ load behavior.</li>
+            <li>Static public demo plus protected/local backend for safer deployment.</li>
+          </ul>
+        </article>
+        <article>
+          <h2>Run Locally</h2>
+          <pre><code>python -m pip install -r requirements.txt
+cd gan-ui && npm ci
+cd ..
+scripts/dev_fullstack.sh</code></pre>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,16 +1,23 @@
-import argparse, os, torch
-from torchvision.utils import save_image
-import sys, os
-from pathlib import Path
+"""
+Sample images from a saved GAN checkpoint.
 
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+This script loads the generator weights from a `ckpt_epoch*.pt` saved by
+`src/scripts/train_gan.py` and writes a grid image to disk.
+"""
 
-from src.models.gan.generator import DCGANGenerator
+from __future__ import annotations
+
+import argparse
+import torch
+
+from src.models.gan.factory import build_generator_from_cfg
 from src.models.gan.ema import EMA
+from src.utils.checkpoint import load_checkpoint
+from src.utils.vision import save_image_grid
 
 
 def main():
+    """Entrypoint for sampling a grid of images."""
     p = argparse.ArgumentParser()
     p.add_argument("--checkpoint", type=str, required=True)
     p.add_argument("--n", type=int, default=64)
@@ -19,28 +26,28 @@ def main():
     p.add_argument("--ema", action="store_true")
     args = p.parse_args()
 
-    ckpt = torch.load(args.checkpoint, map_location="cpu")
+    ckpt = load_checkpoint(args.checkpoint, map_location="cpu")
     cfg = ckpt["cfg"]["model"]
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    G = DCGANGenerator(
-        cfg["latent_dim"],
-        cfg["img_channels"],
-        tuple(cfg["g_channels"]),
-        cfg["img_size"],
-    ).to(device)
+    G = build_generator_from_cfg(cfg).to(device)
     G.load_state_dict(ckpt["G"])
 
-    if args.ema and cfg.get("ema", {}).get("enabled", False):
-        ema = EMA(G, decay=cfg["ema"].get("decay", 0.999))
-        ema.register()  # shadow will be overwritten by current weights
-        ema.apply_shadow()
+    if args.ema:
+        # EMA sampling: prefer EMA shadow weights saved in the checkpoint.
+        shadow = ckpt.get("ema_shadow")
+        if isinstance(shadow, dict) and shadow:
+            ema = EMA(G, decay=float(cfg.get("ema", {}).get("decay", 0.999)))
+            ema.load_shadow(shadow, device=torch.device(device))
+            ema.apply_shadow()
+        else:
+            print("Warning: checkpoint has no ema_shadow; sampling with raw generator weights.")
 
     torch.manual_seed(args.seed)
     z = torch.randn(args.n, cfg["latent_dim"], device=device)
     with torch.no_grad():
         x = G(z)
-    save_image((x + 1) / 2, args.out, nrow=8)
+    save_image_grid(x, args.out, nrow=8, value_range=(-1, 1))
     print(f"Saved {args.out}")
 
 

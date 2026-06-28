@@ -1,0 +1,67 @@
+# GAN training config: WGAN-GP (Anime Faces 128x128) tuned for ~16GB VRAM (RTX 5080).
+#
+# Train:
+#   python -m src.scripts.train_gan --config configs/gan/wgangp_animefaces128_rtx16gb.yaml
+#
+model:
+  type: "wgan-gp"
+  arch: "dcgan"
+  img_size: 128
+  img_channels: 3
+  latent_dim: 128
+  g_channels: [1024, 512, 256, 128, 64]
+  d_channels: [64, 128, 256, 512, 1024]
+  ema:
+    enabled: true
+    decay: 0.999
+
+data:
+  dataset: "imagefolder"
+  root: "./data/anime_faces/images"
+  splits:
+    train: ./configs/splits/anime_faces_train.txt
+    val: ./configs/splits/anime_faces_val.txt
+  img_size: 128
+
+  # 16GB VRAM safe default: use grad accumulation to keep an effective batch of 64.
+  batch_size: 32
+  num_workers: 8
+  pin_memory: true
+  persistent_workers: true
+
+training:
+  # Multi-day run; stop via Ctrl+C and resume from ckpt_latest.pt.
+  epochs: 300
+  device: "cuda"
+
+  # BF16 is typically the most stable choice on modern NVIDIA GPUs (no GradScaler needed).
+  mixed_precision: true
+  amp_dtype: "bf16"
+
+  tf32: true
+  cudnn_benchmark: true
+
+  tensorboard: true
+
+  lr_g: 1.0e-4
+  lr_d: 1.0e-4
+  betas: [0.0, 0.9]
+  n_critic: 5
+  lambda_gp: 10.0
+
+  grad_accum_steps: 2 # effective batch = 32*2 = 64
+  log_every: 50
+  sample_every: 2000
+
+  # Safer for long runs: periodic step checkpoints + always write ckpt_latest.pt.
+  save_every: 1
+  save_every_steps: 5000
+  keep_last_checkpoints: 10
+
+  logdir: "logs/stage3_wgangp_animefaces_rtx16gb"
+
+metrics:
+  fid_kid:
+    enabled: true
+    every_epoch: 5
+    max_samples: 5000

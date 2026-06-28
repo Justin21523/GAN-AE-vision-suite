@@ -1,42 +1,501 @@
-#root {
-  max-width: 1280px;
+:root {
+  --bg: #f7f9fc;
+  --surface: #ffffff;
+  --surface-2: #f1f5fb;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: rgba(15, 23, 42, 0.10);
+
+  --primary: #4f46e5; /* indigo */
+  --primary-2: #4338ca;
+  --secondary: #14b8a6; /* teal */
+  --secondary-2: #0d9488;
+
+  --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --radius: 12px;
+}
+
+.AppShell {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.TopBar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(247, 249, 252, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+
+.TopBarInner {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.Brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.BrandMark {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  box-shadow: var(--shadow);
+}
+
+.BrandTitle {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.BrandTitle strong {
+  font-size: 14px;
+}
+
+.BrandTitle span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.Nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.Nav button {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.Nav button[data-active="true"] {
+  border-color: rgba(79, 70, 229, 0.35);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.Container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px 16px 28px;
+}
+
+.Grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 16px;
+}
+
+@media (max-width: 980px) {
+  .Grid {
+    grid-template-columns: 1fr;
   }
-  to {
-    transform: rotate(360deg);
+}
+
+.Card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.CardHeader {
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.CardHeader h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.CardHeader p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.CardBody {
+  padding: 14px;
+}
+
+.Row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.Field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
+  flex: 1;
+}
+
+.Field label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.Input,
+.Select,
+.Textarea {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 10px;
+  font-size: 14px;
+}
+
+.Textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+}
+
+.Button {
+  border: 1px solid rgba(79, 70, 229, 0.35);
+  background: linear-gradient(180deg, var(--primary), var(--primary-2));
+  color: white;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ButtonSecondary {
+  border: 1px solid rgba(20, 184, 166, 0.35);
+  background: linear-gradient(180deg, var(--secondary), var(--secondary-2));
+  color: white;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ButtonGhost {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.Button:disabled,
+.ButtonSecondary:disabled,
+.ButtonGhost:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.Status {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.Pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.PillGood {
+  border-color: rgba(20, 184, 166, 0.35);
+  background: rgba(20, 184, 166, 0.08);
+  color: #0f766e;
+}
+
+.PillWarn {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.10);
+  color: #92400e;
+}
+
+.PillBad {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.10);
+  color: #991b1b;
+}
+
+.JobList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.JobItem {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.JobItem:hover {
+  border-color: rgba(79, 70, 229, 0.25);
+}
+
+.JobItemHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.JobName {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.JobMeta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.Code {
+  margin-top: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  color: #0b1220;
+}
+
+.PreviewImage {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.OverviewPage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.HeroPanel {
+  min-height: 390px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr);
+  gap: 22px;
+  align-items: center;
+  padding: 30px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(79, 70, 229, 0.10), rgba(20, 184, 166, 0.08)),
+    var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.HeroCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.Kicker {
+  color: var(--secondary-2);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.HeroCopy h1 {
+  margin: 0;
+  max-width: 760px;
+  font-size: 48px;
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.HeroCopy p,
+.BodyText {
+  margin: 0;
+  max-width: 720px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.HeroVisual {
+  min-width: 0;
+}
+
+.DemoSampleGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.70);
+}
+
+.DemoSampleTile {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.DemoSampleTile span {
+  position: absolute;
+  inset: 22% 24% 18%;
+  border-radius: 50% 50% 44% 44%;
+  background:
+    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.95) 0 7%, transparent 8%),
+    radial-gradient(circle at 65% 35%, rgba(255, 255, 255, 0.95) 0 7%, transparent 8%),
+    rgba(15, 23, 42, 0.28);
+}
+
+.DashboardBand,
+.OverviewGrid {
+  display: grid;
+  gap: 16px;
+}
+
+.DashboardBand {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.OverviewGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.MetricCard {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.MetricCard span,
+.MetricCard small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.MetricCard strong {
+  display: block;
+  margin: 6px 0;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.Timeline,
+.ArchitectureList {
+  display: grid;
+  gap: 10px;
+}
+
+.Timeline {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.TimelineStep,
+.ArchitectureList div {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.TimelineStep {
+  min-height: 94px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.TimelineStep span {
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.12);
+  color: var(--primary-2);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.TimelineStep strong {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.ArchitectureList div {
+  padding: 12px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+@media (max-width: 980px) {
+  .HeroPanel,
+  .OverviewGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .DashboardBand {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .HeroCopy h1 {
+    font-size: 40px;
+  }
+
+  .Timeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+@media (max-width: 640px) {
+  .HeroPanel {
+    padding: 20px;
   }
-}
 
-.card {
-  padding: 2em;
-}
+  .HeroCopy h1 {
+    font-size: 34px;
+  }
 
-.read-the-docs {
-  color: #888;
+  .DashboardBand,
+  .Timeline {
+    grid-template-columns: 1fr;
+  }
 }
